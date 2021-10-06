@@ -10,7 +10,7 @@ RUN add-apt-repository ppa:gladky-anton/lammps -y && \
     mkdir /lammps/build 
     
 WORKDIR /lammps/build
-RUN cmake -D BUILD_MPI=yes -D PKG_GPU=on  -D GPU_API=cuda -D GPU_ARCH=sm_75 -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs ../cmake && \
+RUN cmake -D BUILD_MPI=yes -D PKG_GPU=on  -D GPU_API=cuda -D GPU_ARCH=sm_80 -DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs ../cmake && \
     make -j 4 && \
     make install && \
     ln -s /lammps/build/lmp /usr/bin/
