@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+src/lmp_equiliv.data
+src/lmp_equiliv.lammpstrj
+src/log.cite
+src/log.lammps
+
