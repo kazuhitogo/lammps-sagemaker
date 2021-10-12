@@ -6,9 +6,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -y update && \ 
     apt-get -y upgrade && \
     apt-get -y install python3.9 python3-pip wget cmake && \
-    apt-get -y install build-essential libopenmpi-dev software-properties-common && \
-    python -m pip install numpy pandas && \
+    apt-get -y install build-essential libopenmpi-dev software-properties-common nvidia-utils-460 && \
     ln -s /usr/bin/python3.9 /usr/bin/python && \
+    python -m pip install numpy pandas && \
     mkdir -p /program/lammps201029 && \
     cd /program/lammps201029 && \
     wget https://download.lammps.org/tars/lammps-29Oct2020.tar.gz && \
@@ -32,4 +32,4 @@ RUN apt-get -y update && \
     make -j 4 && \
     make install
 
-# ENTRYPOINT ["bash"]
+ENTRYPOINT ["python"]
