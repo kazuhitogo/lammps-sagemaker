@@ -12,8 +12,6 @@ os.environ['OMP_NUM_THREADS'] = '1'
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input-dir', type=str, default=None)
-    parser.add_argument('--input-tmp-data', type=str, default=None)
-    parser.add_argument('--input-equiliv-in', type=str, default=None)
     parser.add_argument('--input-equiliv-sh', type=str, default=None)
     parser.add_argument('--input-lmp2data-py', type=str, default=None)
     parser.add_argument('--np', type=str, default='2')
