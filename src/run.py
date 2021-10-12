@@ -1,8 +1,13 @@
-import subprocess, argparse, os, stat
+import subprocess, argparse, os, stat, shutil
 
 # Definition constant
 LOGFILE_NAME = 'lmp_equiliv.log'
 LMP_PATH = '/program/lammps201029/build/lmp'
+
+# Set environment variables
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['OMPI_ALLOW_RUN_AS_ROOT'] = '1'
+os.environ['OMP_NUM_THREADS'] = '1'  
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -21,44 +26,48 @@ def parse_args():
 if __name__=='__main__':
     args = parse_args()
     input_dir = args.input_dir
+    logfile_tmp_path = os.path.join(args.input_dir,LOGFILE_NAME)
     logfile_path = os.path.join(args.output_dir,LOGFILE_NAME)
     
     # cd /opt/ml/processing/input/
     os.chdir(input_dir)
     
-    # chmod lmp_equiliv.sh +x
-#     os.chmod(f'./{args.input_equiliv_sh}',  0o777) 
-    
-    
+    print('check current directory')
     cmd_response = subprocess.run(["ls", "-l"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(cmd_response.stdout.decode())
     
-#     cmd_response = subprocess.run(['which','bash'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#     print(cmd_response.stdout.decode())
-    
-#     cmd_response = subprocess.run(["ls", "-l", "/usr/bin/bash"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#     print(cmd_response.stdout.decode())
-    
-    cmd_response = subprocess.run(["cat", args.input_equiliv_sh], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(cmd_response.stdout.decode())
-
-    
-    
-    command = f'bash {args.input_equiliv_sh} {args.np} {args.gpu} {LMP_PATH} {args.input_equiliv_in} {logfile_path} {args.input_lmp2data_py}'
+    print('mpi will be started with following command.')
+    command = f'bash {args.input_equiliv_sh} {args.np} {args.gpu} {LMP_PATH} {args.input_equiliv_in} {logfile_tmp_path}'
     command_list = command.split(' ')
-
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    os.environ['OMPI_ALLOW_RUN_AS_ROOT'] = '1'
-    os.environ['OMP_NUM_THREADS'] = '1'
-    
-    
-    
-#     command = f'mpirun --allow-run-as-root -np {args.np} {LMP_PATH} -sf gpu -pk gpu {args.gpu} -in {args.input_equiliv_in}'
-#     command_list = command.split(' ')
-    print('mpi will be started...')
-    print(command_list)
+    print(*command_list)
     cmd_response = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print('mpi ended...')
+    with open(os.path.join(args.output_dir,'dump.txt'),mode='w') as f:
+        f.write(cmd_response.stdout.decode())
+    print('end.')
+
+    # copy generated files to output directory 
+    for file_name in ['lmp_equiliv.lammpstrj','lmp_equiliv.log','log.cite','log.lammps']:
+        shutil.copy2(os.path.join(args.input_dir,file_name), args.output_dir)
+    
+    
+    # lmp2data.py exec
+    print('exec lmp2data.py with following command.')
+    command = f'python {args.input_lmp2data_py} equiliv'
+    command_list = command.split(' ')
+    print(*command_list)
+    cmd_response = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print('end.')
+    
+    # lmp2data.py の結果をテキストファイルに書き込み
+    with open(os.path.join(args.output_dir,'stdout.txt'),mode='w') as f:
+        f.write(cmd_response.stdout.decode())
+    with open(os.path.join(args.output_dir,'stderr.txt'),mode='w') as f:
+        f.write(cmd_response.stderr.decode())
+    
+    # 併せて標準出力(NotebookとCWLへ書き込み)
+    print('stdout:')
     print(cmd_response.stdout.decode())
+    print('stderr:')
     print(cmd_response.stderr.decode())
     
+    exit()
