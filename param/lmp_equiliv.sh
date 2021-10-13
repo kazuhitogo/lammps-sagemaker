@@ -1,15 +1,10 @@
 #!/bin/bash
 
-# export CUDA_VISIBLE_DEVICES="0"
-# export OMPI_ALLOW_RUN_AS_ROOT=1
-
 export NP_NUM=$1
 export GPU_NUM=$2
 export LMP_BIN=$3
 export INFILE=$4
 export LOGFILE_TMP_PATH=$5
-# export PYFILE=$6
-# export LOGFILE_PATH=$7
 
 echo NP_NUM is $NP_NUM
 echo GPU_NUM is $GPU_NUM

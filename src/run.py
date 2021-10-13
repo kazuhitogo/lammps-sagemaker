@@ -71,7 +71,7 @@ if __name__=='__main__':
     with open(os.path.join(args.output_dir,'lmp2data_stderr.txt'),mode='w') as f:
         f.write(cmd_response.stderr.decode())
     
-    # 併せて標準出力(Notebookの出力とCWLへ書き込み)
+    # 併せて標準出力(Notebookの出力とCloudWatch Logsへ書き込み)
     print('stdout:')
     print(cmd_response.stdout.decode())
     print('stderr:')

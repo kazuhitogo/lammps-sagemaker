@@ -1,0 +1,66 @@
+#lammps input script
+
+variable	iseed1 equal 12345
+variable	nthermo equal 5000
+variable	nconfo1 equal ceil(1e4)
+
+variable	tempe1_1 equal 550
+variable	tempe1_2 equal 550
+variable	dt1 equal 1.6
+variable	nrun1 equal ceil(1e5)
+
+#variable        sd equal 78.266
+
+units           real
+atom_style      full
+
+boundary        p p p
+box             tilt large
+
+pair_style      lj/cut/coul/long 10.0 10.0
+pair_modify     mix geometric
+#pair_modify     mix arithmetic
+
+special_bonds   lj 0 0 0.5 coul 0 0 0.5
+#special_bonds   dreiding
+bond_style      harmonic
+angle_style     harmonic
+dihedral_style  charmm
+improper_style  cvff
+#improper_style  umbrella
+
+read_data       "lmp_tmp1.data"
+
+neighbor        2.0 bin
+#neigh_modify    delay 0
+neigh_modify    delay 10 every 1 check yes one 2000
+
+kspace_style    pppm 1e-5
+kspace_modify   order 4 
+
+#group           poly molecule 1
+
+thermo_style    custom step time temp pe ke etotal enthalpy press vol density
+thermo          ${nthermo}
+
+minimize        1e-4 1e-6 5000 1000000
+reset_timestep  0
+
+fix             1 all shake 1e-5 1000 0 m 1.0 
+fix             2 all momentum ${nthermo} linear 1 1 1 
+
+dump            1 all custom ${nconfo1} "lmp_equiliv.lammpstrj" id mol type xs ys zs ix iy iz
+dump_modify     1 sort id
+#dump            2 poly custom ${nconfo2} "lmp_equiliv_poly.lammpstrj" id mol type xs ys zs ix iy iz
+#dump_modify     2 sort id
+#dump            3 poly xtc ${nconfo2} "lmp_equiliv_poly.xtc"
+
+velocity        all create ${tempe1_1} ${iseed1}
+
+fix             3 all nvt temp ${tempe1_1} ${tempe1_2} 100. tchain 3
+#fix		5 all deform 10 x final 0.0 ${sd} y final 0.0 ${sd} z final 0.0 ${sd}
+
+timestep        ${dt1}
+run             ${nrun1}
+#unfix           3
+#unfix		5
