@@ -50,7 +50,11 @@ if __name__=='__main__':
         f.write(cmd_response.stdout.decode())
     with open(os.path.join(args.output_dir,'mpirun_stderr.txt'),mode='w') as f:
         f.write(cmd_response.stderr.decode())
-    print('end.')
+    
+    # mpirun が成功したかどうかをログファイルを読んで出力する
+    with open('./lmp_equiliv.log') as f:
+        print(f.read())
+    print('finished mpirun.\n\n')
 
     # mpirun を実行して生成されるファイルを output_dir にコピーしておく
     for file_name in ['lmp_equiliv.lammpstrj','lmp_equiliv.log','log.cite','log.lammps']:
@@ -63,7 +67,8 @@ if __name__=='__main__':
     command_list = command.split(' ')
     print(*command_list)
     cmd_response = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print('end.')
+    
+    print('finished lmp2data.py.\n\n')
     
     # lmp2data.py の結果をテキストファイルに書き込み
     with open(os.path.join(args.output_dir,'lmp2data_stdout.txt'),mode='w') as f:
@@ -73,8 +78,6 @@ if __name__=='__main__':
     
     # 併せて標準出力(Notebookの出力とCloudWatch Logsへ書き込み)
     print('stdout:')
-    print(cmd_response.stdout.decode())
-    print('stderr:')
-    print(cmd_response.stderr.decode())
+    print('    ' + cmd_response.stdout.decode())
     
     exit()
