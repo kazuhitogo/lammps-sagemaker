@@ -1,4 +1,4 @@
-import subprocess, argparse, os, stat, shutil
+import subprocess, argparse, os, stat, shutil, re
 
 # Definition constant
 LOGFILE_NAME = 'lmp_equiliv.log'
@@ -59,6 +59,29 @@ if __name__=='__main__':
     # mpirun を実行して生成されるファイルを output_dir にコピーしておく
     for file_name in ['lmp_equiliv.lammpstrj','lmp_equiliv.log','log.cite','log.lammps']:
         shutil.copy2(os.path.join(args.input_dir,file_name), args.output_dir)
+    
+    # lmp_equiliv.logに含まれる表をcsv形式にして別途出力
+    with open(os.path.join(args.output_dir,'lmp_equiliv.log'),'r')  as f:
+        text = f.read()
+        text_list = text.split('\n')
+    header = 'Step Time Temp PotEng KinEng TotEng Enthalpy Press Volume Density '
+    footer_list=[header for header in text_list if header.startswith('Loop time')]
+    for counter in range(text_list.count(header)):
+        index = (text_list.index(header),text_list.index(footer_list[counter]))
+        extract_text = text_list[index[0]:index[1]]
+        csv_txt = ""
+        for t in text_list[index[0]:index[1]]:
+            tmp = re.sub('[ 　]+', ',', t)
+            if tmp[0]==',':
+                tmp=tmp[1:]
+            if tmp[-1]==',':
+                tmp=tmp[:-1]
+            tmp+='\n'
+            csv_txt += tmp
+        csv_txt = csv_txt[:-1]
+        with open(os.path.join(args.output_dir,f'{str(counter)}.csv'),'w') as f:
+            f.write(csv_txt)
+        text_list=text_list[index[1]:]
     
     
     # lmp2data.py を実行
