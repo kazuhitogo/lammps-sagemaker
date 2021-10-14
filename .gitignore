@@ -132,4 +132,6 @@ dmypy.json
 */lmp_equiliv.lammpstrj
 */log.cite
 */log.lammps
-
+       
+param_0/
+param_1/
