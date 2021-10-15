@@ -4,10 +4,10 @@ variable	iseed1 equal 12345
 variable	nthermo equal 5000
 variable	nconfo1 equal ceil(1e4)
 
-variable	tempe1_1 equal tmpe1_1_variable
-variable	tempe1_2 equal 550
-variable	dt1 equal 1.6
-variable	nrun1 equal ceil(1e5)
+variable	tempe1_1 equal tempe1_1_variable
+variable	tempe1_2 equal tempe1_2_variable
+variable	dt1 equal dt1_variable
+variable	nrun1 equal nrun1_variable
 
 #variable        sd equal 78.266
 
