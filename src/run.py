@@ -1,7 +1,6 @@
 import subprocess, argparse, os, stat, shutil, re
 
 # Definition constant
-LOGFILE_NAME = 'lmp_equiliv.log'
 LMP_PATH = '/program/lammps201029/build/lmp'
 
 # 環境変数の設定
@@ -11,13 +10,14 @@ os.environ['OMP_NUM_THREADS'] = '1'
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-dir', type=str, default=None)
-    parser.add_argument('--input-equiliv-in', type=str, default=None)
-    parser.add_argument('--input-equiliv-sh', type=str, default=None)
-    parser.add_argument('--input-lmp2data-py', type=str, default=None)
-    parser.add_argument('--np', type=str, default='2')
+    parser.add_argument('--input-dir', type=str, default='/opt/ml/processing/input/')
+    parser.add_argument('--input-equiliv-in', type=str, default='lmp_equiliv.in')
+    parser.add_argument('--input-equiliv-sh', type=str, default='lmp_equiliv.sh')
+    parser.add_argument('--input-lmp2data-py', type=str, default='lmp2data.py')
+    parser.add_argument('--np', type=str, default='1')
     parser.add_argument('--gpu', type=str, default='1')
-    parser.add_argument('--output-dir', type=str, default=None)
+    parser.add_argument('--output-dir', type=str, default='/opt/ml/processing/output')
+    parser.add_argument('--logfile-name', type=str, default='lmp_equiliv.log')
     args, _ = parser.parse_known_args()
     print(f'Received arguments {args}')
     return args
@@ -25,8 +25,10 @@ def parse_args():
 if __name__=='__main__':
     args = parse_args()
     input_dir = args.input_dir
-    logfile_tmp_path = os.path.join(args.input_dir,LOGFILE_NAME)
-    logfile_path = os.path.join(args.output_dir,LOGFILE_NAME)
+    output_dir = args.output_dir
+    logfile_name = args.logfile_name
+    logfile_tmp_path = os.path.join(input_dir,logfile_name)
+    logfile_path = os.path.join(output_dir,logfile_name)
     
     # デフォルトだとカレントディレクトリは root であり、
     # mpirunに都合が悪いのでファイル群が置いてあるinput_dir(/opt/ml/processing/input)に移動
@@ -46,9 +48,9 @@ if __name__=='__main__':
     cmd_response = subprocess.run(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # mpirun を走らせると大量の標準エラー出力が出るので、ダンプして output_dir に置く(併せて標準出力も)
     # output_dir(/opt/ml/processing/output/) に置くと処理が完了したあと自動的に S3 に転送される
-    with open(os.path.join(args.output_dir,'mpirun_stdout.txt'),mode='w') as f:
+    with open(os.path.join(output_dir,'mpirun_stdout.txt'),mode='w') as f:
         f.write(cmd_response.stdout.decode())
-    with open(os.path.join(args.output_dir,'mpirun_stderr.txt'),mode='w') as f:
+    with open(os.path.join(output_dir,'mpirun_stderr.txt'),mode='w') as f:
         f.write(cmd_response.stderr.decode())
     
     # mpirun が成功したかどうかをログファイルを読んで出力する
@@ -58,10 +60,10 @@ if __name__=='__main__':
 
     # mpirun を実行して生成されるファイルを output_dir にコピーしておく
     for file_name in ['lmp_equiliv.lammpstrj','lmp_equiliv.log','log.cite','log.lammps']:
-        shutil.copy2(os.path.join(args.input_dir,file_name), args.output_dir)
+        shutil.copy2(os.path.join(input_dir,file_name), output_dir)
     
     # lmp_equiliv.logに含まれる表をcsv形式にして別途出力
-    with open(os.path.join(args.output_dir,'lmp_equiliv.log'),'r')  as f:
+    with open(os.path.join(output_dir,'lmp_equiliv.log'),'r')  as f:
         text = f.read()
         text_list = text.split('\n')
     header = 'Step Time Temp PotEng KinEng TotEng Enthalpy Press Volume Density '
@@ -79,7 +81,7 @@ if __name__=='__main__':
             tmp+='\n'
             csv_txt += tmp
         csv_txt = csv_txt[:-1]
-        with open(os.path.join(args.output_dir,f'{str(counter)}.csv'),'w') as f:
+        with open(os.path.join(output_dir,f'{str(counter)}.csv'),'w') as f:
             f.write(csv_txt)
         text_list=text_list[index[1]:]
     
@@ -94,9 +96,9 @@ if __name__=='__main__':
     print('finished lmp2data.py.\n\n')
     
     # lmp2data.py の結果をテキストファイルに書き込み
-    with open(os.path.join(args.output_dir,'lmp2data_stdout.txt'),mode='w') as f:
+    with open(os.path.join(output_dir,'lmp2data_stdout.txt'),mode='w') as f:
         f.write(cmd_response.stdout.decode())
-    with open(os.path.join(args.output_dir,'lmp2data_stderr.txt'),mode='w') as f:
+    with open(os.path.join(output_dir,'lmp2data_stderr.txt'),mode='w') as f:
         f.write(cmd_response.stderr.decode())
     
     # 併せて標準出力(Notebookの出力とCloudWatch Logsへ書き込み)
