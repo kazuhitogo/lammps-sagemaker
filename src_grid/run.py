@@ -10,19 +10,18 @@ os.environ['OMP_NUM_THREADS'] = '1'
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-dir', type=str, default='/opt/ml/processing/input/')
+    parser.add_argument('--input-dir', type=str, default=os.environ.get('SM_CHANNEL_PARAM')) # SM_CHANEL_{fitのキーの大文字}
     parser.add_argument('--input-equiliv-in', type=str, default='lmp_equiliv.in')
     parser.add_argument('--input-equiliv-sh', type=str, default='lmp_equiliv.sh')
     parser.add_argument('--input-lmp2data-py', type=str, default='lmp2data.py')
-    parser.add_argument('--np', type=str, default='1')
-    parser.add_argument('--gpu', type=str, default='1')
-    parser.add_argument('--output-dir', type=str, default='/opt/ml/processing/output')
+    parser.add_argument('--np', type=str, default=os.environ.get('SM_NUM_CPUS'))
+    parser.add_argument('--gpu', type=str, default=os.environ.get('SM_NUM_GPUS'))
+    parser.add_argument('--output-dir', type=str, default=os.environ.get('SM_MODEL_DIR'))
     parser.add_argument('--tempe1-1-variable', type=str, default='550')
     parser.add_argument('--tempe1-2-variable', type=str, default='550')
     parser.add_argument('--dt1-variable', type=str, default='1.6')
     parser.add_argument('--nrun1-variable', type=str, default='ceil(1e5)')
     parser.add_argument('--logfile-name', type=str, default='lmp_equiliv.log')
-    
     args, _ = parser.parse_known_args()
     print(f'Received arguments {args}')
     return args
@@ -37,9 +36,7 @@ if __name__=='__main__':
     logfile_path = os.path.join(output_dir,logfile_name)
     
     # デフォルトだとカレントディレクトリは root であり、
-    # mpirunに都合が悪いのでファイル群が置いてあるinput_dir(/opt/ml/processing/input)に移動
-    # cd /opt/ml/processing/input/
-    # ※このコードは/opt/ml/processing/input/code/以下にある
+    # mpirunに都合が悪いのでファイル群が置いてあるinput_dir(/opt/ml/input/data/param)に移動
     print('change directory')
     os.chdir(input_dir)
     
@@ -51,13 +48,9 @@ if __name__=='__main__':
     print('replace parameter')
     with open(args.input_equiliv_in,'r') as f:
         equiliv_in = f.read()
-    print(f'tempe1_1_variable: {args.tempe1_1_variable}')
     equiliv_in = equiliv_in.replace('tempe1_1_variable',args.tempe1_1_variable)
-    print(f'tempe1_2_variable: {args.tempe1_2_variable}')
     equiliv_in = equiliv_in.replace('tempe1_2_variable',args.tempe1_2_variable)
-    print(f'dt1_variable: {args.dt1_variable}')
     equiliv_in = equiliv_in.replace('dt1_variable',args.dt1_variable)
-    print(f'nrun1_variable: {args.nrun1_variable}')
     equiliv_in = equiliv_in.replace('nrun1_variable',args.nrun1_variable)
     with open(args.input_equiliv_in,'w') as f:
         f.write(equiliv_in)
@@ -74,6 +67,14 @@ if __name__=='__main__':
     with open(os.path.join(output_dir,'mpirun_stderr.txt'),mode='w') as f:
         f.write(cmd_response.stderr.decode())
     
+    print('check current directory')
+    cmd_response = subprocess.run(['ls', '-l'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print(cmd_response.stdout.decode())
+    print('check output directory')
+    cmd_response = subprocess.run(['ls', '-l',output_dir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print(cmd_response.stdout.decode())
+
+        
     # mpirun が成功したかどうかをログファイルを読んで出力する
     with open('./lmp_equiliv.log') as f:
         print(f.read())
@@ -125,5 +126,3 @@ if __name__=='__main__':
     # 併せて標準出力(Notebookの出力とCloudWatch Logsへ書き込み)
     print('stdout:')
     print('    ' + cmd_response.stdout.decode())
-    
-    exit()

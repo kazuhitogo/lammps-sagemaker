@@ -1,14 +1,11 @@
-FROM nvidia/cuda:11.4.2-devel-ubuntu20.04
+FROM 763104351884.dkr.ecr.ap-northeast-1.amazonaws.com/tensorflow-training:2.4-gpu-py37
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -y update && \ 
     apt-get -y upgrade && \
-#     apt-get -y install python3.9 python3-pip wget cmake --no-install-recommends && \
-#     apt-get -y install build-essential libopenmpi-dev software-properties-common --no-install-recommends && \
-    apt-get -y install python3.9 python3-pip wget cmake build-essential libopenmpi-dev software-properties-common --no-install-recommends && \
+    apt-get -y install wget cmake build-essential libopenmpi-dev software-properties-common --no-install-recommends nvidia-utils-460 && \
     rm -rf /var/lib/apt/lists/* && \
-    ln -s /usr/bin/python3.9 /usr/bin/python && \
     python -m pip install numpy pandas && \
     mkdir -p /program/lammps201029 && \
     cd /program/lammps201029 && \
@@ -32,5 +29,3 @@ RUN apt-get -y update && \
           -DPKG_MISC=yes && \
     make -j 4 && \
     make install
-
-ENTRYPOINT ["python"]
